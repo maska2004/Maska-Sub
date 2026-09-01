@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buy Exam Pins — Maska Sub</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo"><span class="dot"></span>Maska Sub</div>
+    <div class="tag"><a href="/" style="color:inherit;text-decoration:underline;">Back to plans</a></div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>Buy exam<br><span>pins.</span></h1>
+      <p>JAMB UTME PINs and WAEC result checker PINs.</p>
+    </section>
+
+    <section class="plans" style="display:block;max-width:480px;margin:0 auto;">
+      <label>Exam</label>
+      <div id="examChips" class="networks" style="margin-bottom:16px;"></div>
+
+      <label>Option</label>
+      <select id="variationSelect" style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;"></select>
+
+      <div id="profileIdWrap" style="display:none;">
+        <label>JAMB Profile ID</label>
+        <input type="text" id="profileIdInput" placeholder="Your JAMB Profile ID"
+          style="width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+        <button class="pay-btn" id="verifyBtn" type="button" style="width:100%;margin-bottom:16px;">Verify Profile ID</button>
+        <div id="verifyResult" style="margin-bottom:16px;"></div>
+      </div>
+
+      <div id="paymentFields">
+        <label>Phone number</label>
+        <input type="tel" id="phoneInput" placeholder="080XXXXXXXX" required
+          style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+        <label>Email (for receipt)</label>
+        <input type="email" id="emailInput" placeholder="you@email.com" required
+          style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+        <button class="pay-btn" id="payBtn" style="width:100%;">Pay now</button>
+      </div>
+      <p class="drawer-note">Payment is handled securely by Paystack.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Maska Sub — built for fast, local data resale.</p>
+    <p><a href="/terms.html" style="color:inherit;">Terms of Service</a> · <a href="/privacy.html" style="color:inherit;">Privacy Policy</a></p>
+  </footer>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;padding:8px 16px;text-align:center;font-size:0.8em;opacity:0.85;z-index:998;">
+    🛡️ Maska Sub will never ask you to pay outside this website or share your password via WhatsApp/DM.
+  </div>
+  <a href="https://wa.me/2347050286199?text=Hi%2C%20I%20need%20help%20with%20my%20Maska%20Sub%20order"
+     target="_blank" rel="noopener"
+     style="position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:999;font-size:28px;"
+     aria-label="Chat with support on WhatsApp">💬</a>
+
+  <script>
+    let exams = {};
+    let selectedExam = null;
+    let paystackPublicKey = "";
+    let profileVerified = false;
+
+    const examChips = document.getElementById("examChips");
+    const variationSelect = document.getElementById("variationSelect");
+    const profileIdWrap = document.getElementById("profileIdWrap");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const verifyResult = document.getElementById("verifyResult");
+    const payBtn = document.getElementById("payBtn");
+
+    async function init() {
+      if (!localStorage.getItem("authToken")) {
+        window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      const configRes = await fetch("/api/config");
+      paystackPublicKey = (await configRes.json()).paystackPublicKey;
+
+      const res = await fetch("/api/exam-services");
+      exams = await res.json();
+      selectedExam = Object.keys(exams)[0];
+      renderExamChips();
+      renderVariations();
+    }
+
+    function renderExamChips() {
+      examChips.innerHTML = "";
+      Object.entries(exams).forEach(([key, cfg]) => {
+        const chip = document.createElement("div");
+        chip.className = "network-chip" + (key === selectedExam ? " active" : "");
+        chip.textContent = cfg.label;
+        chip.onclick = () => {
+          selectedExam = key;
+          profileVerified = false;
+          verifyResult.innerHTML = "";
+          renderExamChips();
+          renderVariations();
+        };
+        examChips.appendChild(chip);
+      });
+    }
+
+    function renderVariations() {
+      const cfg = exams[selectedExam];
+      variationSelect.innerHTML = cfg.variations.map(v => `<option value="${v.variation_code}">${v.label} — ₦${v.amountNaira}</option>`).join("");
+      profileIdWrap.style.display = cfg.requiresProfileVerify ? "block" : "none";
+      profileVerified = !cfg.requiresProfileVerify; // WAEC doesn't need verification
+    }
+
+    verifyBtn.addEventListener("click", async () => {
+      const profileId = document.getElementById("profileIdInput").value.trim();
+      if (!profileId) {
+        verifyResult.innerHTML = `<p style="color:#f66;">Enter your JAMB Profile ID.</p>`;
+        return;
+      }
+
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = "Verifying…";
+
+      try {
+        const res = await fetch("/api/verify-biller", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({ serviceID: exams[selectedExam].vtpassServiceID, billersCode: profileId }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          verifyResult.innerHTML = `<p style="color:#f66;">${data.error}</p>`;
+          profileVerified = false;
+          return;
+        }
+
+        profileVerified = true;
+        verifyResult.innerHTML = `<div style="border:1px solid #2a2;border-radius:8px;padding:12px;"><p>✅ Name: <strong>${data.customerName || "Verified"}</strong></p></div>`;
+      } catch (err) {
+        verifyResult.innerHTML = `<p style="color:#f66;">Verification failed. Please try again.</p>`;
+        profileVerified = false;
+      } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = "Verify Profile ID";
+      }
+    });
+
+    payBtn.onclick = async () => {
+      const cfg = exams[selectedExam];
+      if (cfg.requiresProfileVerify && !profileVerified) {
+        alert("Please verify your JAMB Profile ID first.");
+        return;
+      }
+
+      const variationCode = variationSelect.value;
+      const profileId = document.getElementById("profileIdInput").value.trim();
+      const phone = document.getElementById("phoneInput").value.trim();
+      const email = document.getElementById("emailInput").value.trim();
+
+      if (!/^0[789][01]\d{8}$/.test(phone)) {
+        alert("Enter a valid Nigerian phone number.");
+        return;
+      }
+      if (!email.includes("@")) {
+        alert("Enter a valid email.");
+        return;
+      }
+
+      const variation = cfg.variations.find(v => v.variation_code === variationCode);
+
+      payBtn.disabled = true;
+      payBtn.textContent = "Starting payment…";
+
+      try {
+        const initRes = await fetch("/api/orders/initialize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({
+            type: "exam",
+            examType: selectedExam,
+            variationCode,
+            profileId: cfg.requiresProfileVerify ? profileId : undefined,
+            phone,
+            email,
+          }),
+        });
+        const initData = await initRes.json();
+
+        if (initRes.status === 401) {
+          window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        if (!initRes.ok) {
+          alert(initData.error || "Could not start payment.");
+          payBtn.disabled = false;
+          payBtn.textContent = "Pay now";
+          return;
+        }
+
+        const handler = PaystackPop.setup({
+          key: paystackPublicKey,
+          email,
+          amount: variation.amountNaira * 100,
+          ref: initData.reference,
+          callback: function (response) { verifyPayment(response.reference); },
+          onClose: function () {
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay now";
+          },
+        });
+        handler.openIframe();
+      } catch (err) {
+        alert("Something went wrong. Please try again.");
+        payBtn.disabled = false;
+        payBtn.textContent = "Pay now";
+      }
+    };
+
+    async function verifyPayment(reference) {
+      payBtn.textContent = "Confirming payment…";
+      try {
+        const res = await fetch(`/api/orders/verify/${reference}`);
+        const data = await res.json();
+
+        if (data.status === "paid") {
+          let msg = "Payment received!";
+          if (data.order && data.order.deliveredCode) {
+            msg += "\n\n" + data.order.deliveredCode + "\n\nSave this — you'll need it to check your result.";
+          } else {
+            msg += " Your PIN will be delivered shortly.";
+          }
+          msg += "\n\nOrder reference: " + reference;
+          alert(msg);
+        } else {
+          alert("Payment could not be confirmed. If you were charged, please contact support.");
+        }
+      } catch (err) {
+        alert("Could not confirm payment status. Please contact support with your reference: " + reference);
+      } finally {
+        payBtn.disabled = false;
+        payBtn.textContent = "Pay now";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

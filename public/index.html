@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maska Sub — Buy Data Instantly</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">
+      <span class="dot"></span>
+      Maska Sub
+    </div>
+    <div class="tag" id="accountArea">Instant data top-up</div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero">
+      <h1>Buy data.<br><span>Get it fast.</span></h1>
+      <p>Pick your network, choose a plan, pay securely — no queues, no wahala.</p>
+      <p style="margin-top:8px;display:flex;flex-wrap:wrap;gap:12px;">
+        <a href="/airtime.html" style="color:inherit;text-decoration:underline;">Buy airtime →</a>
+        <a href="/electricity.html" style="color:inherit;text-decoration:underline;">Pay electricity →</a>
+        <a href="/cabletv.html" style="color:inherit;text-decoration:underline;">Pay cable TV →</a>
+        <a href="/exams.html" style="color:inherit;text-decoration:underline;">Buy exam pins →</a>
+      </p>
+    </section>
+
+    <section class="networks" id="networkTabs"></section>
+
+    <section class="plans" id="plansGrid">
+      <p class="loading">Loading plans…</p>
+    </section>
+
+    <div class="order-drawer" id="orderDrawer">
+      <div class="drawer-inner">
+        <button class="close-btn" id="closeDrawer">×</button>
+        <h2 id="drawerPlanLabel">Plan</h2>
+        <p class="drawer-price" id="drawerPlanPrice">₦0</p>
+
+        <label>Phone number to receive data</label>
+        <input type="tel" id="phoneInput" placeholder="080XXXXXXXX" required>
+        <div id="networkWarning"></div>
+
+        <label>Email (for payment receipt)</label>
+        <input type="email" id="emailInput" placeholder="you@email.com" required>
+
+        <button class="pay-btn" id="payBtn">Pay now</button>
+        <p class="drawer-note">Payment is handled securely by Paystack.</p>
+      </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+
+  </main>
+
+  <footer class="footer">
+    <p>Maska Sub — built for fast, local data resale.</p>
+    <p><a href="/check-order.html" style="color:inherit;">Check your order status</a></p>
+    <p><a href="/my-orders.html" style="color:inherit;">My orders</a></p>
+    <p><a href="/terms.html" style="color:inherit;">Terms of Service</a> · <a href="/privacy.html" style="color:inherit;">Privacy Policy</a></p>
+  </footer>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;padding:8px 16px;text-align:center;font-size:0.8em;opacity:0.85;z-index:998;">
+    🛡️ Maska Sub will never ask you to pay outside this website or share your password via WhatsApp/DM.
+  </div>
+  <a href="https://wa.me/2347050286199?text=Hi%2C%20I%20need%20help%20with%20my%20Maska%20Sub%20order"
+     target="_blank" rel="noopener"
+     style="position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:999;font-size:28px;"
+     aria-label="Chat with support on WhatsApp">
+    💬
+  </a>
+
+  <script src="app.js"></script>
+</body>
+</html>

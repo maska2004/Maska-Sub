@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check Your Order — Maska Sub</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">
+      <span class="dot"></span>
+      Maska Sub
+    </div>
+    <div class="tag"><a href="/" style="color:inherit;text-decoration:underline;">Back to plans</a></div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero">
+      <h1>Check your<br><span>order status.</span></h1>
+      <p>Enter the order reference from your payment receipt and the phone number you paid for.</p>
+    </section>
+
+    <section class="plans" style="display:block;max-width:480px;margin:0 auto;">
+      <label>Order reference</label>
+      <input type="text" id="referenceInput" placeholder="order_xxxxxxxxxxxx" required
+        style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+      <label>Phone number used</label>
+      <input type="tel" id="phoneInput" placeholder="080XXXXXXXX" required
+        style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+      <button class="pay-btn" id="checkBtn" style="width:100%;">Check status</button>
+
+      <div id="resultBox" style="margin-top:24px;"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Maska Sub — built for fast, local data resale.</p>
+    <p><a href="/terms.html" style="color:inherit;">Terms of Service</a> · <a href="/privacy.html" style="color:inherit;">Privacy Policy</a></p>
+  </footer>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;padding:8px 16px;text-align:center;font-size:0.8em;opacity:0.85;z-index:998;">
+    🛡️ Maska Sub will never ask you to pay outside this website or share your password via WhatsApp/DM.
+  </div>
+  <a href="https://wa.me/2347050286199?text=Hi%2C%20I%20need%20help%20with%20my%20Maska%20Sub%20order"
+     target="_blank" rel="noopener"
+     style="position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:999;font-size:28px;"
+     aria-label="Chat with support on WhatsApp">
+    💬
+  </a>
+
+  <script>
+    const checkBtn = document.getElementById("checkBtn");
+    const resultBox = document.getElementById("resultBox");
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = String(str ?? "");
+      return div.innerHTML;
+    }
+
+    checkBtn.addEventListener("click", async () => {
+      const reference = document.getElementById("referenceInput").value.trim();
+      const phone = document.getElementById("phoneInput").value.trim();
+
+      if (!reference || !phone) {
+        resultBox.innerHTML = `<p style="color:#f66;">Please enter both the reference and phone number.</p>`;
+        return;
+      }
+
+      resultBox.innerHTML = `<p>Checking…</p>`;
+
+      try {
+        const res = await fetch(`/api/orders/status?reference=${encodeURIComponent(reference)}&phone=${encodeURIComponent(phone)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          resultBox.innerHTML = `<p style="color:#f66;">${escapeHtml(data.error || "Order not found.")}</p>`;
+          return;
+        }
+
+        const statusLabel = data.status === "paid" ? "Paid" : data.status === "failed" ? "Payment failed" : "Pending";
+        const deliveryLabel = data.fulfilled ? "Delivered ✅" : "Not yet delivered — we're on it, or contact support.";
+
+        resultBox.innerHTML = `
+          <div style="border:1px solid #333;border-radius:12px;padding:16px;">
+            <p><strong>${escapeHtml(data.network)}</strong> — ${escapeHtml(data.label)}</p>
+            <p>₦${escapeHtml(data.amountNaira)}</p>
+            <p>Phone: ${escapeHtml(data.phone)}</p>
+            <p>Payment status: <strong>${statusLabel}</strong></p>
+            <p>Delivery status: <strong>${deliveryLabel}</strong></p>
+            ${data.deliveredCode ? `<p style="margin-top:12px;padding:10px;background:#111;border-radius:8px;word-break:break-all;">🔑 ${escapeHtml(data.deliveredCode)}</p>` : ""}
+          </div>
+        `;
+      } catch (err) {
+        resultBox.innerHTML = `<p style="color:#f66;">Something went wrong. Please try again.</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

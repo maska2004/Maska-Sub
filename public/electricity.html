@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pay Electricity Bill — Maska Sub</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo"><span class="dot"></span>Maska Sub</div>
+    <div class="tag"><a href="/" style="color:inherit;text-decoration:underline;">Back to plans</a></div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>Pay electricity<br><span>bills.</span></h1>
+      <p>Select your disco, enter your meter number, and we'll confirm the name before you pay.</p>
+    </section>
+
+    <section class="plans" style="display:block;max-width:480px;margin:0 auto;">
+      <label>Disco</label>
+      <select id="discoSelect" style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;"></select>
+
+      <label>Meter type</label>
+      <div style="display:flex;gap:12px;margin-bottom:16px;">
+        <label><input type="radio" name="meterType" value="prepaid" checked> Prepaid</label>
+        <label><input type="radio" name="meterType" value="postpaid"> Postpaid</label>
+      </div>
+
+      <label>Meter number</label>
+      <input type="text" id="meterInput" placeholder="Meter number" required
+        style="width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+      <button class="pay-btn" id="verifyBtn" type="button" style="width:100%;margin-bottom:16px;">Verify meter</button>
+
+      <div id="verifyResult" style="margin-bottom:16px;"></div>
+
+      <div id="paymentFields" style="display:none;">
+        <label>Amount (₦)</label>
+        <input type="number" id="amountInput" placeholder="Enter amount" required
+          style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+        <label>Phone number</label>
+        <input type="tel" id="phoneInput" placeholder="080XXXXXXXX" required
+          style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+        <label>Email (for receipt)</label>
+        <input type="email" id="emailInput" placeholder="you@email.com" required
+          style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+        <button class="pay-btn" id="payBtn" style="width:100%;">Pay now</button>
+      </div>
+      <p class="drawer-note">Payment is handled securely by Paystack.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Maska Sub — built for fast, local data resale.</p>
+    <p><a href="/terms.html" style="color:inherit;">Terms of Service</a> · <a href="/privacy.html" style="color:inherit;">Privacy Policy</a></p>
+  </footer>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;padding:8px 16px;text-align:center;font-size:0.8em;opacity:0.85;z-index:998;">
+    🛡️ Maska Sub will never ask you to pay outside this website or share your password via WhatsApp/DM.
+  </div>
+  <a href="https://wa.me/2347050286199?text=Hi%2C%20I%20need%20help%20with%20my%20Maska%20Sub%20order"
+     target="_blank" rel="noopener"
+     style="position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:999;font-size:28px;"
+     aria-label="Chat with support on WhatsApp">💬</a>
+
+  <script>
+    let discos = [];
+    let selectedDisco = null;
+    let paystackPublicKey = "";
+    let verifiedMinAmount = 500;
+
+    const discoSelect = document.getElementById("discoSelect");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const verifyResult = document.getElementById("verifyResult");
+    const paymentFields = document.getElementById("paymentFields");
+    const payBtn = document.getElementById("payBtn");
+
+    async function init() {
+      if (!localStorage.getItem("authToken")) {
+        window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      const configRes = await fetch("/api/config");
+      paystackPublicKey = (await configRes.json()).paystackPublicKey;
+
+      const res = await fetch("/api/electricity-discos");
+      discos = await res.json();
+      discoSelect.innerHTML = discos.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
+    }
+
+    verifyBtn.addEventListener("click", async () => {
+      const discoId = discoSelect.value;
+      const meterNumber = document.getElementById("meterInput").value.trim();
+      const meterType = document.querySelector('input[name="meterType"]:checked').value;
+
+      if (!meterNumber) {
+        verifyResult.innerHTML = `<p style="color:#f66;">Enter a meter number.</p>`;
+        return;
+      }
+
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = "Verifying…";
+      paymentFields.style.display = "none";
+
+      try {
+        const disco = discos.find(d => d.id === discoId);
+        const res = await fetch("/api/verify-biller", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({ serviceID: disco.vtpassServiceID, billersCode: meterNumber, type: meterType }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          verifyResult.innerHTML = `<p style="color:#f66;">${data.error}</p>`;
+          return;
+        }
+
+        selectedDisco = discoId;
+        verifiedMinAmount = Number(data.minPurchaseAmount) || 500;
+
+        verifyResult.innerHTML = `
+          <div style="border:1px solid #2a2;border-radius:8px;padding:12px;">
+            <p>✅ Customer: <strong>${data.customerName || "Verified"}</strong></p>
+            ${data.address ? `<p style="opacity:0.7;">${data.address}</p>` : ""}
+          </div>
+        `;
+        document.getElementById("amountInput").min = verifiedMinAmount;
+        document.getElementById("amountInput").placeholder = `Minimum ₦${verifiedMinAmount}`;
+        paymentFields.style.display = "block";
+      } catch (err) {
+        verifyResult.innerHTML = `<p style="color:#f66;">Verification failed. Please try again.</p>`;
+      } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = "Verify meter";
+      }
+    });
+
+    payBtn.onclick = async () => {
+      const meterNumber = document.getElementById("meterInput").value.trim();
+      const meterType = document.querySelector('input[name="meterType"]:checked').value;
+      const amount = Number(document.getElementById("amountInput").value);
+      const phone = document.getElementById("phoneInput").value.trim();
+      const email = document.getElementById("emailInput").value.trim();
+
+      if (!amount || amount < verifiedMinAmount) {
+        alert(`Enter an amount of at least ₦${verifiedMinAmount}.`);
+        return;
+      }
+      if (!/^0[789][01]\d{8}$/.test(phone)) {
+        alert("Enter a valid Nigerian phone number.");
+        return;
+      }
+      if (!email.includes("@")) {
+        alert("Enter a valid email.");
+        return;
+      }
+
+      payBtn.disabled = true;
+      payBtn.textContent = "Starting payment…";
+
+      try {
+        const initRes = await fetch("/api/orders/initialize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({
+            type: "electricity",
+            discoId: selectedDisco,
+            meterNumber,
+            meterType,
+            amountNaira: amount,
+            phone,
+            email,
+          }),
+        });
+        const initData = await initRes.json();
+
+        if (initRes.status === 401) {
+          window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        if (!initRes.ok) {
+          alert(initData.error || "Could not start payment.");
+          payBtn.disabled = false;
+          payBtn.textContent = "Pay now";
+          return;
+        }
+
+        const handler = PaystackPop.setup({
+          key: paystackPublicKey,
+          email,
+          amount: amount * 100,
+          ref: initData.reference,
+          callback: function (response) { verifyPayment(response.reference); },
+          onClose: function () {
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay now";
+          },
+        });
+        handler.openIframe();
+      } catch (err) {
+        alert("Something went wrong. Please try again.");
+        payBtn.disabled = false;
+        payBtn.textContent = "Pay now";
+      }
+    };
+
+    async function verifyPayment(reference) {
+      payBtn.textContent = "Confirming payment…";
+      try {
+        const res = await fetch(`/api/orders/verify/${reference}`);
+        const data = await res.json();
+
+        if (data.status === "paid") {
+          let msg = "Payment received!";
+          if (data.order && data.order.deliveredCode) {
+            msg += "\n\n" + data.order.deliveredCode;
+          } else {
+            msg += " Your token will be delivered shortly.";
+          }
+          msg += "\n\nOrder reference: " + reference;
+          alert(msg);
+        } else {
+          alert("Payment could not be confirmed. If you were charged, please contact support.");
+        }
+      } catch (err) {
+        alert("Could not confirm payment status. Please contact support with your reference: " + reference);
+      } finally {
+        payBtn.disabled = false;
+        payBtn.textContent = "Pay now";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

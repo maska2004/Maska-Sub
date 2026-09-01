@@ -1,0 +1,14 @@
+[
+  { "id": "ikeja-electric", "label": "Ikeja Electric (IKEDC)", "vtpassServiceID": "ikeja-electric" },
+  { "id": "eko-electric", "label": "Eko Electric (EKEDC)", "vtpassServiceID": "eko-electric" },
+  { "id": "kano-electric", "label": "Kano Electric (KEDCO)", "vtpassServiceID": "kano-electric" },
+  { "id": "portharcourt-electric", "label": "Port Harcourt Electric (PHED)", "vtpassServiceID": "portharcourt-electric" },
+  { "id": "jos-electric", "label": "Jos Electric (JED)", "vtpassServiceID": "jos-electric" },
+  { "id": "abuja-electric", "label": "Abuja Electric (AEDC)", "vtpassServiceID": "abuja-electric" },
+  { "id": "ibadan-electric", "label": "Ibadan Electric (IBEDC)", "vtpassServiceID": "ibadan-electric" },
+  { "id": "kaduna-electric", "label": "Kaduna Electric (KAEDCO)", "vtpassServiceID": "kaduna-electric" },
+  { "id": "enugu-electric", "label": "Enugu Electric (EEDC)", "vtpassServiceID": "enugu-electric" },
+  { "id": "benin-electric", "label": "Benin Electric (BEDC)", "vtpassServiceID": "benin-electric" },
+  { "id": "aba-electric", "label": "Aba Electric (ABA)", "vtpassServiceID": "aba-electric" },
+  { "id": "yola-electric", "label": "Yola Electric (YEDC)", "vtpassServiceID": "yola-electric" }
+]

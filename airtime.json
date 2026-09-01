@@ -1,0 +1,6 @@
+[
+  { "id": "mtn", "label": "MTN", "vtpassServiceID": "mtn", "minAmount": 50, "maxAmount": 50000 },
+  { "id": "glo", "label": "Glo", "vtpassServiceID": "glo", "minAmount": 50, "maxAmount": 50000 },
+  { "id": "airtel", "label": "Airtel", "vtpassServiceID": "airtel", "minAmount": 50, "maxAmount": 50000 },
+  { "id": "etisalat", "label": "9mobile", "vtpassServiceID": "etisalat", "minAmount": 50, "maxAmount": 50000 }
+]

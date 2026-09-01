@@ -1,0 +1,36 @@
+{
+  "dstv": {
+    "vtpassServiceID": "dstv",
+    "label": "DStv",
+    "bouquets": [
+      { "variation_code": "dstv-padi", "label": "DStv Padi", "amountNaira": 1850 },
+      { "variation_code": "dstv-yanga", "label": "DStv Yanga", "amountNaira": 2565 },
+      { "variation_code": "dstv-confam", "label": "DStv Confam", "amountNaira": 4615 },
+      { "variation_code": "dstv79", "label": "DStv Compact", "amountNaira": 7900 },
+      { "variation_code": "dstv7", "label": "DStv Compact Plus", "amountNaira": 12400 },
+      { "variation_code": "dstv3", "label": "DStv Premium", "amountNaira": 18400 }
+    ]
+  },
+  "gotv": {
+    "vtpassServiceID": "gotv",
+    "label": "GOtv",
+    "bouquets": [
+      { "variation_code": "gotv-lite", "label": "GOtv Lite", "amountNaira": 410 },
+      { "variation_code": "gotv-jinja", "label": "GOtv Jinja", "amountNaira": 1640 },
+      { "variation_code": "gotv-jolli", "label": "GOtv Jolli", "amountNaira": 2460 },
+      { "variation_code": "gotv-max", "label": "GOtv Max", "amountNaira": 3600 },
+      { "variation_code": "gotv-supa-plus", "label": "GOtv Supa Plus", "amountNaira": 15700 }
+    ]
+  },
+  "startimes": {
+    "vtpassServiceID": "startimes",
+    "label": "StarTimes",
+    "bouquets": [
+      { "variation_code": "nova", "label": "Nova (Monthly)", "amountNaira": 900 },
+      { "variation_code": "basic", "label": "Basic (Monthly)", "amountNaira": 1700 },
+      { "variation_code": "smart", "label": "Smart (Monthly)", "amountNaira": 2200 },
+      { "variation_code": "classic", "label": "Classic (Monthly)", "amountNaira": 2500 },
+      { "variation_code": "super", "label": "Super (Monthly)", "amountNaira": 4200 }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "jamb": {
+    "vtpassServiceID": "jamb",
+    "label": "JAMB",
+    "requiresProfileVerify": true,
+    "variations": [
+      { "variation_code": "utme-mock", "label": "UTME PIN (with mock exam)", "amountNaira": 7700 },
+      { "variation_code": "utme-no-mock", "label": "UTME PIN (without mock exam)", "amountNaira": 6200 }
+    ]
+  },
+  "waec": {
+    "vtpassServiceID": "waec",
+    "label": "WAEC Result Checker",
+    "requiresProfileVerify": false,
+    "variations": [
+      { "variation_code": "waecdirect", "label": "WASSCE/GCE Result Checker PIN", "amountNaira": 900 }
+    ]
+  }
+}

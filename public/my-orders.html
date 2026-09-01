@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Orders — Maska Sub</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">
+      <span class="dot"></span>
+      Maska Sub
+    </div>
+    <div class="tag"><a href="/" style="color:inherit;text-decoration:underline;">Back to plans</a></div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero">
+      <h1>My<br><span>orders.</span></h1>
+      <p>Every data purchase you've made with this account.</p>
+    </section>
+
+    <section class="plans" id="ordersList" style="display:block;max-width:600px;margin:0 auto;">
+      <p class="loading">Loading…</p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Maska Sub — built for fast, local data resale.</p>
+    <p><a href="/terms.html" style="color:inherit;">Terms of Service</a> · <a href="/privacy.html" style="color:inherit;">Privacy Policy</a></p>
+  </footer>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;padding:8px 16px;text-align:center;font-size:0.8em;opacity:0.85;z-index:998;">
+    🛡️ Maska Sub will never ask you to pay outside this website or share your password via WhatsApp/DM.
+  </div>
+  <a href="https://wa.me/2347050286199?text=Hi%2C%20I%20need%20help%20with%20my%20Maska%20Sub%20order"
+     target="_blank" rel="noopener"
+     style="position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:999;font-size:28px;"
+     aria-label="Chat with support on WhatsApp">
+    💬
+  </a>
+
+  <script>
+    const ordersList = document.getElementById("ordersList");
+    const token = localStorage.getItem("authToken");
+
+    // Escapes text before inserting it into the page, so a phone number or
+    // plan name can never be interpreted as HTML/script.
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = String(str ?? "");
+      return div.innerHTML;
+    }
+
+    if (!token) {
+      window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+    } else {
+      loadOrders();
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await fetch("/api/orders/mine", {
+          headers: { Authorization: "Bearer " + token },
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("authPhone");
+          window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+          return;
+        }
+
+        const orders = await res.json();
+
+        if (!orders.length) {
+          ordersList.innerHTML = `<p>You haven't made any purchases yet. <a href="/" style="color:inherit;">Buy your first plan</a>.</p>`;
+          return;
+        }
+
+        ordersList.innerHTML = orders.map(order => {
+          const statusLabel = order.status === "paid" ? "Paid" : order.status === "failed" ? "Payment failed" : "Pending";
+          const deliveryLabel = order.fulfilled ? "Delivered ✅" : "Not yet delivered";
+          const date = new Date(order.createdAt).toLocaleString();
+          return `
+            <div style="border:1px solid #333;border-radius:12px;padding:16px;margin-bottom:12px;">
+              <p><strong>${escapeHtml(order.network)}</strong> — ${escapeHtml(order.label)}</p>
+              <p>₦${escapeHtml(order.amountNaira)} · ${escapeHtml(order.phone)}</p>
+              <p>Status: <strong>${statusLabel}</strong> · ${deliveryLabel}</p>
+              ${order.deliveredCode ? `<p style="margin-top:8px;padding:10px;background:#111;border-radius:8px;word-break:break-all;">🔑 ${escapeHtml(order.deliveredCode)}</p>` : ""}
+              <p style="opacity:0.6;font-size:0.85em;">${escapeHtml(date)} · Ref: ${escapeHtml(order.reference)}</p>
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        ordersList.innerHTML = `<p style="color:#f66;">Could not load your orders. Please try again.</p>`;
+      }
+    }
+  </script>
+</body>
+</html>

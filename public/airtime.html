@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buy Airtime — Maska Sub</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">
+      <span class="dot"></span>
+      Maska Sub
+    </div>
+    <div class="tag"><a href="/" style="color:inherit;text-decoration:underline;">Buy data instead</a></div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero">
+      <h1>Buy airtime.<br><span>Any network.</span></h1>
+      <p>Enter the phone number — we'll detect the network. You can also choose it yourself.</p>
+    </section>
+
+    <section class="plans" style="display:block;max-width:480px;margin:0 auto;">
+
+      <label>Phone number</label>
+      <input type="tel" id="phoneInput" placeholder="080XXXXXXXX" maxlength="11" required
+        style="width:100%;padding:12px;margin-bottom:8px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+      <p id="detectedNote" style="margin-bottom:16px;opacity:0.75;"></p>
+
+      <label>Network</label>
+      <div id="networkChips" class="networks" style="margin-bottom:16px;"></div>
+
+      <label>Amount (₦)</label>
+      <div id="quickAmounts" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+      <input type="number" id="amountInput" placeholder="Enter amount" required
+        style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+      <label>Email (for payment receipt)</label>
+      <input type="email" id="emailInput" placeholder="you@email.com" required
+        style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+      <button class="pay-btn" id="payBtn" style="width:100%;">Pay now</button>
+      <p class="drawer-note">Payment is handled securely by Paystack.</p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Maska Sub — built for fast, local data resale.</p>
+    <p><a href="/terms.html" style="color:inherit;">Terms of Service</a> · <a href="/privacy.html" style="color:inherit;">Privacy Policy</a></p>
+  </footer>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;padding:8px 16px;text-align:center;font-size:0.8em;opacity:0.85;z-index:998;">
+    🛡️ Maska Sub will never ask you to pay outside this website or share your password via WhatsApp/DM.
+  </div>
+  <a href="https://wa.me/2347050286199?text=Hi%2C%20I%20need%20help%20with%20my%20Maska%20Sub%20order"
+     target="_blank" rel="noopener"
+     style="position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:999;font-size:28px;"
+     aria-label="Chat with support on WhatsApp">
+    💬
+  </a>
+
+  <script>
+    // Common Nigerian prefixes by network. Not exhaustive — number portability
+    // means some numbers have switched networks, so this is a helpful guess,
+    // not a guarantee. The customer can always pick manually.
+    const PREFIX_MAP = {
+      mtn: ["0803","0806","0703","0706","0813","0814","0816","0810","0906","0916","0704"],
+      glo: ["0805","0807","0705","0815","0811","0905","0915"],
+      airtel: ["0802","0808","0708","0812","0701","0902","0901","0904","0907","0912"],
+      etisalat: ["0809","0817","0818","0908","0909","0917","0918"],
+    };
+
+    let networks = [];
+    let selectedNetworkId = null;
+    let paystackPublicKey = "";
+
+    const phoneInput = document.getElementById("phoneInput");
+    const detectedNote = document.getElementById("detectedNote");
+    const networkChips = document.getElementById("networkChips");
+    const quickAmounts = document.getElementById("quickAmounts");
+    const amountInput = document.getElementById("amountInput");
+    const emailInput = document.getElementById("emailInput");
+    const payBtn = document.getElementById("payBtn");
+
+    async function init() {
+      if (!localStorage.getItem("authToken")) {
+        window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+        return;
+      }
+
+      const configRes = await fetch("/api/config");
+      paystackPublicKey = (await configRes.json()).paystackPublicKey;
+
+      const res = await fetch("/api/airtime-networks");
+      networks = await res.json();
+      renderNetworkChips();
+      renderQuickAmounts();
+    }
+
+    function renderNetworkChips() {
+      networkChips.innerHTML = "";
+      networks.forEach((net) => {
+        const chip = document.createElement("div");
+        chip.className = "network-chip" + (net.id === selectedNetworkId ? " active" : "");
+        chip.textContent = net.label;
+        chip.onclick = () => {
+          selectedNetworkId = net.id;
+          renderNetworkChips();
+        };
+        networkChips.appendChild(chip);
+      });
+    }
+
+    function renderQuickAmounts() {
+      const amounts = [100, 200, 500, 1000, 2000, 5000];
+      quickAmounts.innerHTML = "";
+      amounts.forEach((amt) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "₦" + amt;
+        btn.style.cssText = "padding:8px 14px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;";
+        btn.onclick = () => { amountInput.value = amt; };
+        quickAmounts.appendChild(btn);
+      });
+    }
+
+    phoneInput.addEventListener("input", () => {
+      const digits = phoneInput.value.replace(/\D/g, "").slice(0, 11);
+      phoneInput.value = digits;
+
+      if (digits.length >= 4) {
+        const prefix = digits.slice(0, 4);
+        const match = Object.entries(PREFIX_MAP).find(([, prefixes]) => prefixes.includes(prefix));
+        if (match) {
+          selectedNetworkId = match[0];
+          const label = networks.find((n) => n.id === match[0])?.label || match[0];
+          detectedNote.textContent = `Detected network: ${label} (tap another below if this is wrong)`;
+          renderNetworkChips();
+          return;
+        }
+      }
+      detectedNote.textContent = "";
+    });
+
+    payBtn.onclick = async () => {
+      const phone = phoneInput.value.trim();
+      const amount = Number(amountInput.value);
+      const email = emailInput.value.trim();
+
+      if (!/^0[789][01]\d{8}$/.test(phone)) {
+        alert("Enter a valid Nigerian phone number.");
+        return;
+      }
+      if (!selectedNetworkId) {
+        alert("Select a network.");
+        return;
+      }
+
+      // Catches the case where auto-detect suggested one network but the
+      // customer then manually tapped a different one — a real way to
+      // accidentally send airtime to the wrong network.
+      const detectedNow = (() => {
+        const digits = phone.replace(/\D/g, "");
+        const prefix = digits.slice(0, 4);
+        const match = Object.entries(PREFIX_MAP).find(([, prefixes]) => prefixes.includes(prefix));
+        return match ? match[0] : null;
+      })();
+      if (detectedNow && detectedNow !== selectedNetworkId) {
+        const detectedLabel = networks.find((n) => n.id === detectedNow)?.label || detectedNow;
+        const chosenLabel = networks.find((n) => n.id === selectedNetworkId)?.label || selectedNetworkId;
+        const proceed = confirm(
+          `This number looks like ${detectedLabel}, but you selected ${chosenLabel}. Airtime sent to the wrong network cannot be refunded.\n\nTap OK only if you're sure ${chosenLabel} is correct.`
+        );
+        if (!proceed) return;
+      }
+
+      if (!amount || amount < 50) {
+        alert("Enter a valid amount (minimum ₦50).");
+        return;
+      }
+      if (!email || !email.includes("@")) {
+        alert("Enter a valid email for your receipt.");
+        return;
+      }
+      if (!paystackPublicKey) {
+        alert("Payment isn't configured yet — the store owner needs to add a Paystack public key.");
+        return;
+      }
+
+      payBtn.disabled = true;
+      payBtn.textContent = "Starting payment…";
+
+      try {
+        const initRes = await fetch("/api/orders/initialize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({ type: "airtime", networkId: selectedNetworkId, amountNaira: amount, phone, email }),
+        });
+        const initData = await initRes.json();
+
+        if (initRes.status === 401) {
+          alert("Your session has expired. Please log in again.");
+          window.location.href = "/login.html?redirect=" + encodeURIComponent(window.location.pathname);
+          return;
+        }
+
+        if (!initRes.ok) {
+          alert(initData.error || "Could not start payment.");
+          payBtn.disabled = false;
+          payBtn.textContent = "Pay now";
+          return;
+        }
+
+        const handler = PaystackPop.setup({
+          key: paystackPublicKey,
+          email,
+          amount: amount * 100,
+          ref: initData.reference,
+          callback: function (response) {
+            verifyPayment(response.reference);
+          },
+          onClose: function () {
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay now";
+          },
+        });
+        handler.openIframe();
+      } catch (err) {
+        console.error(err);
+        alert("Something went wrong. Please try again.");
+        payBtn.disabled = false;
+        payBtn.textContent = "Pay now";
+      }
+    };
+
+    async function verifyPayment(reference) {
+      payBtn.textContent = "Confirming payment…";
+      try {
+        const res = await fetch(`/api/orders/verify/${reference}`);
+        const data = await res.json();
+
+        if (data.status === "paid") {
+          alert("Payment received! Your airtime will be delivered shortly.\n\nYour order reference is:\n" + reference + "\n\nSave this — you can check your order status anytime at /check-order.html.");
+          phoneInput.value = "";
+          amountInput.value = "";
+          emailInput.value = "";
+          selectedNetworkId = null;
+          detectedNote.textContent = "";
+          renderNetworkChips();
+        } else {
+          alert("Payment could not be confirmed. If you were charged, please contact support.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Could not confirm payment status. Please contact support with your reference: " + reference);
+      } finally {
+        payBtn.disabled = false;
+        payBtn.textContent = "Pay now";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In — Maska Sub</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">
+      <span class="dot"></span>
+      Maska Sub
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero">
+      <h1 id="formTitle">Log in<br><span>to buy data.</span></h1>
+      <p id="formSubtitle">Enter your phone number and password.</p>
+    </section>
+
+    <section class="plans" style="display:block;max-width:420px;margin:0 auto;">
+      <label>Phone number</label>
+      <input type="tel" id="phoneInput" placeholder="080XXXXXXXX" required
+        style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+      <label>Password</label>
+      <input type="password" id="passwordInput" placeholder="At least 6 characters" required
+        style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+
+      <div id="emailFieldWrap" style="display:none;">
+        <label>Email address</label>
+        <input type="email" id="emailInput" placeholder="you@email.com" required
+          style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;">
+      </div>
+
+      <button class="pay-btn" id="submitBtn" style="width:100%;">Log In</button>
+
+      <p style="text-align:center;margin-top:16px;">
+        <a href="#" id="toggleModeLink" style="color:inherit;text-decoration:underline;">Don't have an account? Sign up</a>
+      </p>
+
+      <p style="text-align:center;margin-top:8px;" id="forgotPasswordWrap">
+        <a href="/forgot-password.html" style="color:inherit;text-decoration:underline;">Forgot password?</a>
+      </p>
+
+      <div id="errorBox" style="margin-top:16px;color:#f66;"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Maska Sub — built for fast, local data resale.</p>
+  </footer>
+
+  <script>
+    let mode = "login"; // or "signup"
+
+    const formTitle = document.getElementById("formTitle");
+    const formSubtitle = document.getElementById("formSubtitle");
+    const submitBtn = document.getElementById("submitBtn");
+    const toggleModeLink = document.getElementById("toggleModeLink");
+    const errorBox = document.getElementById("errorBox");
+    const emailFieldWrap = document.getElementById("emailFieldWrap");
+    const forgotPasswordWrap = document.getElementById("forgotPasswordWrap");
+
+    // If redirected here to log in before checkout, remember where to send them back
+    const redirectTo = new URLSearchParams(window.location.search).get("redirect") || "/";
+
+    // If already logged in, skip straight to where they were headed
+    if (localStorage.getItem("authToken")) {
+      window.location.href = redirectTo;
+    }
+
+    toggleModeLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      mode = mode === "login" ? "signup" : "login";
+      if (mode === "signup") {
+        formTitle.innerHTML = 'Create an<br><span>account.</span>';
+        formSubtitle.textContent = "Set a phone number and password to get started.";
+        submitBtn.textContent = "Sign Up";
+        toggleModeLink.textContent = "Already have an account? Log in";
+        emailFieldWrap.style.display = "block";
+        forgotPasswordWrap.style.display = "none";
+      } else {
+        formTitle.innerHTML = 'Log in<br><span>to buy data.</span>';
+        formSubtitle.textContent = "Enter your phone number and password.";
+        submitBtn.textContent = "Log In";
+        toggleModeLink.textContent = "Don't have an account? Sign up";
+        emailFieldWrap.style.display = "none";
+        forgotPasswordWrap.style.display = "block";
+      }
+      errorBox.textContent = "";
+    });
+
+    submitBtn.addEventListener("click", async () => {
+      const phone = document.getElementById("phoneInput").value.trim();
+      const password = document.getElementById("passwordInput").value;
+      const email = document.getElementById("emailInput").value.trim();
+      errorBox.textContent = "";
+
+      if (!phone || !password) {
+        errorBox.textContent = "Please fill in both fields.";
+        return;
+      }
+      if (mode === "signup" && (!email || !email.includes("@") || !email.includes("."))) {
+        errorBox.textContent = "Please enter a valid email address.";
+        return;
+      }
+
+      const endpoint = mode === "signup" ? "/api/auth/signup" : "/api/auth/login";
+      const body = mode === "signup" ? { phone, password, email } : { phone, password };
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.error || "Something went wrong.";
+          return;
+        }
+
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("authPhone", data.phone);
+        window.location.href = redirectTo;
+      } catch (err) {
+        errorBox.textContent = "Network error. Please try again.";
+      }
+    });
+  </script>
+</body>
+</html>

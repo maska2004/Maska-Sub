@@ -1,0 +1,17 @@
+[
+  { "id": "mtn-1gb", "network": "MTN", "label": "1GB - 30 Days", "costPriceNaira": 480, "sellPriceNaira": 600, "vtpassServiceID": "mtn-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "mtn-2gb", "network": "MTN", "label": "2GB - 30 Days", "costPriceNaira": 950, "sellPriceNaira": 1150, "vtpassServiceID": "mtn-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "mtn-5gb", "network": "MTN", "label": "5GB - 30 Days", "costPriceNaira": 2200, "sellPriceNaira": 2600, "vtpassServiceID": "mtn-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "mtn-10gb", "network": "MTN", "label": "10GB - 30 Days", "costPriceNaira": 4200, "sellPriceNaira": 4800, "vtpassServiceID": "mtn-data", "vtpassVariationCode": "REPLACE_ME" },
+
+  { "id": "glo-1gb", "network": "Glo", "label": "1GB - 30 Days", "costPriceNaira": 350, "sellPriceNaira": 500, "vtpassServiceID": "glo-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "glo-2gb", "network": "Glo", "label": "2GB - 30 Days", "costPriceNaira": 650, "sellPriceNaira": 900, "vtpassServiceID": "glo-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "glo-5gb", "network": "Glo", "label": "5GB - 30 Days", "costPriceNaira": 1500, "sellPriceNaira": 1900, "vtpassServiceID": "glo-data", "vtpassVariationCode": "REPLACE_ME" },
+
+  { "id": "airtel-1gb", "network": "Airtel", "label": "1GB - 30 Days", "costPriceNaira": 450, "sellPriceNaira": 600, "vtpassServiceID": "airtel-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "airtel-2gb", "network": "Airtel", "label": "2GB - 30 Days", "costPriceNaira": 900, "sellPriceNaira": 1150, "vtpassServiceID": "airtel-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "airtel-5gb", "network": "Airtel", "label": "5GB - 30 Days", "costPriceNaira": 2100, "sellPriceNaira": 2500, "vtpassServiceID": "airtel-data", "vtpassVariationCode": "REPLACE_ME" },
+
+  { "id": "9mobile-1gb", "network": "9mobile", "label": "1GB - 30 Days", "costPriceNaira": 400, "sellPriceNaira": 550, "vtpassServiceID": "etisalat-data", "vtpassVariationCode": "REPLACE_ME" },
+  { "id": "9mobile-2gb", "network": "9mobile", "label": "2GB - 30 Days", "costPriceNaira": 750, "sellPriceNaira": 1000, "vtpassServiceID": "etisalat-data", "vtpassVariationCode": "REPLACE_ME" }
+]
