@@ -9,7 +9,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
-const nodemailer = require("nodemailer");
 
 const app = express();
 
@@ -64,26 +63,17 @@ if (process.env.NODE_ENV === "production" && JWT_SECRET === "dev-only-insecure-s
   process.exit(1);
 }
 
-// --- Mail transporter for password reset emails ---
-let mailTransporter = null;
-if (process.env.SMTP_EMAIL && process.env.SMTP_APP_PASSWORD) {
-  mailTransporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.SMTP_EMAIL,
-      pass: process.env.SMTP_APP_PASSWORD,
-    },
-  });
-}
+const { Resend } = require("resend");
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 async function sendResetEmail(toEmail, resetUrl) {
-  if (!mailTransporter) {
-    console.error("Cannot send reset email — SMTP_EMAIL/SMTP_APP_PASSWORD not configured.");
+  if (!resend) {
+    console.error("Cannot send reset email — RESEND_API_KEY not configured.");
     return false;
   }
   try {
-    await mailTransporter.sendMail({
-      from: `"Maska Sub" <${process.env.SMTP_EMAIL}>`,
+    await resend.emails.send({
+      from: "Maska Sub <onboarding@resend.dev>",
       to: toEmail,
       subject: "Reset your Maska Sub password",
       text: `You requested a password reset. This link expires in 30 minutes:\n\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
@@ -95,6 +85,7 @@ async function sendResetEmail(toEmail, resetUrl) {
     return false;
   }
 }
+
 
 
 // Make sure orders.json and users.json exist
